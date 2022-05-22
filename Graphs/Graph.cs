@@ -15,6 +15,8 @@ namespace Contest
         public Dictionary<int, List<int>> AdjacencyList;
         public List<Edge> Edges;
 
+        private SortedDictionary<int, List<Edge>> GroupEdgesForSorting;
+
         // ВХОД: Для списка смежности
         public void AddEdge(int HostVertex, IEnumerable<int> OutVertex)
         {
@@ -71,10 +73,66 @@ namespace Contest
                 AdjacencyList[SecondVertex].Add(FirstVertex);
             else
                 AdjacencyList.Add(SecondVertex, new List<int> { FirstVertex });
+
+            if (GroupEdgesForSorting.ContainsKey(Weight))
+            {
+                GroupEdgesForSorting[Weight].Add(new Edge(FirstVertex, SecondVertex, Weight));
+            }
+            else
+            {
+                GroupEdgesForSorting.Add(Weight, new List<Edge> { new Edge(FirstVertex, SecondVertex, Weight) });
+            }
         }
         public void Sort()
         {
             Edges.Sort();
+        }
+
+        public IEnumerable<Edge> StartKruskalAlg()
+        {
+            //Сортируем рёбра графа в порядке возрастания их веса
+            var EVertexes = from EdgeList in GroupEdgesForSorting
+                                //from Edge in EdgeList.Value.OrderByDescending(t => t.Start)
+                            select EdgeList.Value;
+
+            foreach (var EdgeList in EVertexes)
+            {
+                EdgeList.Sort(new EdgeComparer());
+            }
+
+            var E = from EdgeList in EVertexes
+                    from Edge in EdgeList
+                    select Edge;
+
+            // Дек отсортированных рёбер
+            deque<Edge> StackEVertexes = new deque<Edge>(E);
+            // Стек рёбер остовного дерева, здесь оно формируется
+            List<Edge> SpanningTree = new List<Edge>();
+            // Массив всех вершин графа, на начальной стадии каждая вершина
+            // - отдельный граф
+            var VertexParents = new int[CountVertex];
+            for (int i = 0; i < CountVertex; i++)
+            {
+                VertexParents[i] = i;
+            }
+
+            for (int Edge = 0; Edge < CountEdge; Edge++)
+            {
+                int First = VertexParents[StackEVertexes[Edge].Start];
+                int Second = VertexParents[StackEVertexes[Edge].End];
+                if (First != Second)
+                { //Проверка на связность
+                    for (int Parent = 0; Parent < CountVertex; Parent++)
+                    {
+                        if (VertexParents[Parent] == First)
+                            VertexParents[Parent] = Second;
+                    }
+
+                    SpanningTree.Add(StackEVertexes[Edge]);
+                }
+            }
+
+            return SpanningTree;
         }
 
         public List<int> GetCycleWithBellmanFord()
@@ -140,6 +198,8 @@ namespace Contest
             AdjacencyList = new Dictionary<int, List<int>>();
 
             Edges = new List<Edge>();
+
+            GroupEdgesForSorting = new SortedDictionary<int, List<Edge>>();
         }
     }
 }
