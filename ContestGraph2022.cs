@@ -15,11 +15,6 @@ namespace Contest
 
             int[,] Streets = new int[CountStates, CountStates];
 
-            for (int i = 0; i < CountStates; i++)
-            {
-                Streets[i, i] = 1;
-            }
-
             for (int i = 0; i < CountStreets; i++)
             {
                 string[] newStreet = THR_IN.ReadLine().Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
@@ -36,11 +31,7 @@ namespace Contest
             {
                 for (int j = i; j < CountStates; j++)
                 {
-                    if (i == j)
-                    {
-                        Streets[i, j] = 0;
-                    }
-                    else if (Streets[i, j] == 1 && Streets[j, i] == 0)
+                    if (Streets[i, j] == 1 && Streets[j, i] == 0)
                     {
                         Streets[i, j] = 0; Streets[j, i] = 1;
                     }
