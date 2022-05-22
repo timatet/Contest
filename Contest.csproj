@@ -44,6 +44,12 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ContestGraph2022.cs" />
+    <Compile Include="Graphs\BFS.cs" />
+    <Compile Include="Graphs\Comparers\IntComparers IComparer.cs" />
+    <Compile Include="Graphs\DFS.cs" />
+    <Compile Include="Graphs\Edge.cs" />
+    <Compile Include="Graphs\Exceptions\CycleGraphException.cs" />
+    <Compile Include="Graphs\Graph.cs" />
     <Compile Include="Main.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

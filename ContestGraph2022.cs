@@ -75,7 +75,7 @@ namespace Contest
             var RoomsString = THR_IN.ReadLine().Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
             int[] Rooms = new int[RoomsCount];
             bool[] RoomsWithInput = new bool[RoomsCount];
-            
+
             for (int i = 0; i < RoomsCount; i++)
             {
                 Rooms[i] = int.Parse(RoomsString[i]) - 1;
@@ -99,7 +99,7 @@ namespace Contest
             }
 
             bool[] Input = new bool[RoomsCount];
-            int RoomFrom = -1; 
+            int RoomFrom = -1;
             int RoomTo = RoomWithoutInput;
             for (int i = 0; i < RoomsCount; i++)
             {
@@ -131,11 +131,12 @@ namespace Contest
             }
             THR_IN.Close();
 
-            var Cycle = BellmanFord(graph);
+            var Cycle = graph.GetCycleWithBellmanFord();
             if (Cycle.Count == 0)
             {
                 THR_OUT.WriteLine(-1);
-            }  else
+            }
+            else
             {
                 THR_OUT.WriteLine(1);
                 THR_OUT.WriteLine(Cycle.Count - 1);
@@ -145,48 +146,6 @@ namespace Contest
             THR_OUT.Close();
         }
 
-        public static List<int> BellmanFord(Graph graph)
-        {
-            int CountVertexes = graph.CountVertex, CountEdges = graph.CountEdge;
-            int[] Weights = new int[CountVertexes];
-            var CycleVertexes = Enumerable.Repeat(-1, CountVertexes).ToArray();
-            List<int> CyclePath = new List<int>();
-
-            int CycleStartVertex = -1;
-            for (int i = 0; i < CountVertexes; i++)
-            {
-                CycleStartVertex = -1;
-                for (int j = 0; j < CountEdges; j++)
-                {
-                    if (Weights[graph.Edges[j].End] > Weights[graph.Edges[j].Start] + graph.Edges[j].Weight)
-                    {
-                        Weights[graph.Edges[j].End] = Math.Max(-10000, Weights[graph.Edges[j].Start] + graph.Edges[j].Weight);
-                        CycleVertexes[graph.Edges[j].End] = graph.Edges[j].Start;
-                        CycleStartVertex = graph.Edges[j].End;
-                    }
-                }
-            }
-
-            if (CycleStartVertex != -1)
-            {
-                int CycleEndVertex = CycleStartVertex;
-                for (int i = 0; i < CountVertexes; i++)
-                {
-                    CycleEndVertex = CycleVertexes[CycleEndVertex];
-                }
-
-                while (CyclePath.Count() < 2 || CycleStartVertex != CycleEndVertex)
-                {
-                    CyclePath.Add(CycleStartVertex + 1);
-                    CycleStartVertex = CycleVertexes[CycleStartVertex];
-                }
-
-                CyclePath.Reverse();
-                CyclePath.Add(CyclePath[0]);
-            }
-
-            return CyclePath;
-        }
         public static void RunD(TextReader THR_IN, TextWriter THR_OUT)
         {
             string[] input = THR_IN.ReadLine().Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
@@ -237,307 +196,6 @@ namespace Contest
 
             THR_OUT.WriteLine(MaxFlow);
             THR_OUT.Close();
-        }
-        public class Edge : IComparable<Edge>
-        {
-            #region Fields
-            public int Start;
-            public int End;
-            public int Weight;
-            #endregion
-
-            #region Methods
-            public int CompareTo(Edge other)
-            {
-                if (this.Weight > other.Weight)
-                {
-                    return 1;
-                }
-                else if (this.Weight < other.Weight)
-                {
-                    return -1;
-                }
-                else
-                {
-                    if (this.Start > other.Start)
-                    {
-                        return 1;
-                    }
-                    else if (this.Start < other.Start)
-                    {
-                        return -1;
-                    }
-                    else return 0;
-                }
-            }
-
-            public void SwapVertexes()
-            {
-                int tmp = Start;
-                Start = End;
-                End = tmp;
-            }
-
-            public override string ToString()
-            {
-                return $"{this.Start} {this.End}";
-            }
-
-            public bool Incident(int otherVertex)
-            {
-                if (this.Start == otherVertex || this.End == otherVertex)
-                    return true;
-                return false;
-            }
-            public int GetOtherIncident(int otherVertex)
-            {
-                if (this.Start == otherVertex)
-                {
-                    return this.End;
-                }
-                else if (this.End == otherVertex)
-                {
-                    return this.Start;
-                }
-                else return -1;
-            }
-            #endregion
-
-            #region Constructors
-            public Edge() { }
-            public Edge(int Start, int End, int Weight)
-            {
-                this.Start = Start;
-                this.End = End;
-                this.Weight = Weight;
-            }
-            #endregion
-        }
-
-        class CycleGraphException : Exception
-        {
-            public CycleGraphException(string message)
-                : base(message) { }
-            public CycleGraphException()
-                : base() { }
-        }
-        class IntComparer : IComparer<int>
-        {
-            public int Compare(int x, int y)
-            {
-                return x.CompareTo(y);
-            }
-        }
-        class IntComparerOrder : IComparer<int>
-        {
-            public int Compare(int x, int y)
-            {
-                return y.CompareTo(x);
-            }
-        }
-        public class Graph : ICloneable
-        {
-            #region Fields
-            public int CountVertex;
-            public int CountEdge;
-
-            public int[][] AdjacencyMatrix;
-            public Dictionary<int, List<int>> AdjacencyList;
-            public List<Edge> Edges;
-            #endregion
-
-            #region Methods
-            // ВХОД: Для списка смежности
-            public void AddEdge(int HostVertex, IEnumerable<int> OutVertex)
-            {
-                // Заполняем матрицу смежности
-                foreach (var Vertex in OutVertex)
-                {
-                    // Балансировка рёбер
-                    int _Vertex = Vertex;
-                    int _HostVertex = HostVertex;
-                    if (_Vertex > _HostVertex)
-                    {
-                        int tmp = _HostVertex;
-                        _HostVertex = _Vertex;
-                        _Vertex = tmp;
-                    }
-
-                    // Заполянем список рёбер
-                    Edges.Add(new Edge(_HostVertex, _Vertex, 1));
-
-                    AdjacencyMatrix[HostVertex][Vertex] = 1;
-                    AdjacencyMatrix[Vertex][HostVertex] = 1;
-                }
-                // Заполняем список смежности
-                if (AdjacencyList.ContainsKey(HostVertex))
-                    AdjacencyList[HostVertex] = new List<int>(OutVertex);
-                else
-                    AdjacencyList.Add(HostVertex, new List<int>(OutVertex));
-            }
-            // ВХОД: Для матрицы смежности
-            public void AddEdge(int FirstVertex, int SecondVertex, int Weight)
-            {
-                // Балансировка рёбер
-                //if (FirstVertex > SecondVertex)
-                //{
-                //    int tmp = SecondVertex;
-                //    SecondVertex = FirstVertex;
-                //    FirstVertex = tmp;
-                //}
-
-                // Заполянем список рёбер
-                Edges.Add(new Edge(FirstVertex, SecondVertex, Weight));
-
-                // Заполяняем матрицу смежности
-                AdjacencyMatrix[FirstVertex][SecondVertex] = Weight;
-                AdjacencyMatrix[SecondVertex][FirstVertex] = Weight;
-
-                // Заполянем список смежности
-                if (AdjacencyList.ContainsKey(FirstVertex))
-                    AdjacencyList[FirstVertex].Add(SecondVertex);
-                else
-                    AdjacencyList.Add(FirstVertex, new List<int> { FirstVertex });
-
-                if (AdjacencyList.ContainsKey(SecondVertex))
-                    AdjacencyList[SecondVertex].Add(FirstVertex);
-                else
-                    AdjacencyList.Add(SecondVertex, new List<int> { FirstVertex });
-            }
-            public void Sort()
-            {
-                Edges.Sort();
-            }
-
-            public object Clone()
-            {
-                return new Graph(this.CountVertex, this.CountEdge)
-                {
-                    AdjacencyList = this.AdjacencyList,
-                    AdjacencyMatrix = this.AdjacencyMatrix,
-                    Edges = this.Edges
-                };
-            }
-            #endregion Methods
-
-            #region Constructors
-            public Graph(int CountVertexes, int CountEdges)
-            {
-                CountEdge = CountEdges;
-                CountVertex = CountVertexes;
-
-                AdjacencyMatrix = new int[CountVertex][];
-                for (int adjVertexString = 0; adjVertexString < CountVertex; adjVertexString++)
-                    AdjacencyMatrix[adjVertexString] = new int[CountVertex];
-
-                AdjacencyList = new Dictionary<int, List<int>>();
-
-                Edges = new List<Edge>();
-            }
-            #endregion Constructors
-        }
-        public class DepthFirstSearch
-        {
-            #region Fields
-            public List<int> DFSOrder;
-            public Graph Graph;
-            public HashSet<int> VisitedVertexes;
-            #endregion Fields
-
-            #region Methods
-            public void Start(int StartVertex)
-            {
-                VisitedVertexes.Add(StartVertex);
-                DFSOrder.Add(StartVertex);
-
-                int Numerator = 0;
-                while (VisitedVertexes.Count != Graph.CountVertex)
-                {
-                    if (Numerator == Graph.CountVertex)
-                        return;
-
-                    if (Graph.AdjacencyMatrix[StartVertex][Numerator++] != 0)
-                    {
-                        if (!VisitedVertexes.Contains(Numerator - 1))
-                        {
-                            Start(Numerator - 1);
-                        }
-                    }
-                }
-            }
-            #endregion Methods
-
-            #region Constructors
-            public DepthFirstSearch(Graph graph)
-            {
-                Graph = graph;
-                DFSOrder = new List<int>();
-                VisitedVertexes = new HashSet<int>();
-            }
-            #endregion Constructors
-        }
-        public class BreadthFirstSearch
-        {
-            #region Fields
-            public List<int> BFSOrder;
-            public List<int> BFSPath;
-            public Graph Graph;
-            #endregion
-
-            #region Methods
-            public bool Start(int StartVertex)
-            {
-                return Start(Graph.AdjacencyMatrix, StartVertex, -1);
-            }
-            public bool Start(int StartVertex, int EndVertex)
-            {
-                return Start(Graph.AdjacencyMatrix, StartVertex, EndVertex);
-            }
-            public bool Start(int[][] adj, int StartVertex, int EndVertex)
-            {
-                BFSOrder.Clear(); BFSPath.Clear();
-
-                bool[] VisitedVertexes = new bool[Graph.CountVertex];
-                VisitedVertexes[StartVertex] = true;
-
-                Queue<int> BFSqueue = new Queue<int>(new int[] { StartVertex });
-
-                while (BFSqueue.Count > 0)
-                {
-                    var Vertex = BFSqueue.Dequeue();
-                    if (BFSOrder.Count > 0)
-                        BFSPath.Add(adj[Vertex][BFSOrder.Last()]);
-                    BFSOrder.Add(Vertex);
-
-                    for (int i = 0; i < Graph.CountVertex; i++)
-                    {
-                        if (!VisitedVertexes[i] && adj[Vertex][i] > 0)
-                        {
-                            if (i == EndVertex)
-                            {
-                                BFSOrder.Add(i);
-                                BFSPath.Add(adj[Vertex][i]);
-                                return true;
-                            }
-
-                            BFSqueue.Enqueue(i);
-                            VisitedVertexes[i] = true;
-                        }
-                    }
-                }
-
-                return false;
-            }
-            #endregion Methods
-
-            #region Constructors
-            public BreadthFirstSearch(Graph graph)
-            {
-                Graph = graph;
-                BFSOrder = new List<int>();
-                BFSPath = new List<int>();
-            }
-            #endregion Constructors
         }
     }
 }
